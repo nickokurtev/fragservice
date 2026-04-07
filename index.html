@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRAG.BG - Професионална Сервизна Система</title>
+    <style>
+        :root { --primary: #2c3e50; --urgent: #e74c3c; --success: #2ecc71; --accent: #3498db; --gray: #95a5a6; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: #f4f7f6; color: #333; }
+        .container { max-width: 1650px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        .main-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); padding-bottom: 15px; margin-bottom: 25px; }
+        .logo-img { height: 65px; width: auto; object-fit: contain; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        input, textarea, select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 14px; color: var(--primary); }
+        
+        .btn-submit { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; transition: 0.3s; }
+        .btn-submit:hover { background: #1a252f; }
+
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 1400px; margin-top: 20px; }
+        th { background: var(--primary); color: white; padding: 12px; text-align: left; font-size: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
+        .status-done { background: var(--success); }
+        .status-working { background: var(--gray); }
+
+        .btn-action { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; color: white; font-size: 11px; font-weight: bold; margin-right: 5px; }
+        .btn-edit { background: var(--accent); }
+        .btn-print-in { background: var(--primary); }
+        .btn-print-out { background: var(--success); }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
+        .modal-content { background: white; margin: 3% auto; padding: 25px; width: 600px; border-radius: 10px; max-height: 90vh; overflow-y: auto; }
+
+        /* ПЕЧАТНИ СТИЛОВЕ */
+        #printArea { display: none; }
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background: white; margin: 0; padding: 0; }
+            .container, .modal, .main-header { display: none !important; }
+            #printArea { display: block; width: 210mm; margin: 0 auto; background: white; }
+            
+            .protocol-page-in { height: 148.5mm; padding: 10mm 15mm; box-sizing: border-box; border-bottom: 1px dashed #999; display: flex; flex-direction: column; }
+            .protocol-page-out { height: 297mm; padding: 15mm 20mm; box-sizing: border-box; display: flex; flex-direction: column; }
+
+            .header-print { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 2mm; margin-bottom: 3mm; }
+            .print-logo { height: 42px; width: auto; }
+            .header-right { text-align: right; font-size: 10pt; line-height: 1.2; font-weight: bold; }
+            
+            h3 { text-align: center; margin: 2mm 0; text-transform: uppercase; font-size: 13pt; }
+            
+            .print-row { font-size: 11pt; margin-bottom: 1.5mm; text-align: left; }
+            .print-row b { font-weight: bold; margin-right: 2px; }
+
+            .solution-box { border: 1.5px solid #000; padding: 4mm; margin: 3mm 0; min-height: 50mm; font-size: 11pt; background: #fafafa; }
+            
+            /* Важна бележка без празно пространство отдолу */
+            .important-note { 
+                background: #eee; 
+                border: 1px solid #000; 
+                padding: 1.5mm; 
+                text-align: center; 
+                font-weight: bold; 
+                font-size: 9.5pt; 
+                margin: 1.5mm 0 0 0; /* 0 отдолу */
+            }
+
+            .price-summary { text-align: right; font-size: 18pt; font-weight: bold; border-top: 3px solid #000; padding-top: 2mm; margin-top: 2mm; }
+            
+            .terms-box { font-size: 7.2pt; text-align: justify; line-height: 1.15; border: 1px solid #ccc; padding: 1.5mm; margin-top: 2mm; }
+            .sig-section { display: flex; justify-content: space-between; margin-top: 6mm; }
+            .sig-box { border-top: 1.5px solid #000; width: 40%; text-align: center; padding-top: 1mm; font-size: 10pt; font-weight: bold; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="main-header">
+        <div>
+            <h1>FRAG.BG | Сервизна Система</h1>
+            <p>Професионално управление на ремонти | Тел: 0876012341</p>
+        </div>
+        <img src="frag_logo.png" class="logo-img" onerror="this.style.display='none'">
+    </div>
+
+    <form id="repairForm">
+        <div class="form-grid">
+            <div><label>Клиент:</label><input type="text" id="clientName" required></div>
+            <div><label>Телефон:</label><input type="text" id="clientPhone" required></div>
+            <div><label>Устройство:</label><input type="text" id="device" required></div>
+            <div>
+                <label>Приоритет:</label>
+                <select id="priority">
+                    <option value="Нормален приоритет">Нормален приоритет (3 работни дни)</option>
+                    <option value="СПЕШЕН приоритет">СПЕШЕН приоритет (до 24 часа)</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-bottom: 10px;"><label>Аксесоари:</label><input type="text" id="accessories"></div>
+        <div style="margin-bottom: 15px;"><label>Описание на проблема:</label><textarea id="problem" rows="2" required></textarea></div>
+        <button type="submit" class="btn-submit">ЗАПИС И ПЕЧАТ НА ПРИЕМЕН ПРОТОКОЛ</button>
+    </form>
+
+    <div class="table-section">
+        <input type="text" id="searchInput" placeholder="Търсене..." onkeyup="searchTable()" style="width: 300px; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Приет</th>
+                    <th>Приключен</th>
+                    <th>Клиент / Тел.</th>
+                    <th>Устройство</th>
+                    <th>Проблем</th>
+                    <th>Сума</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin:0 0 15px 0; border-bottom: 2px solid var(--accent); padding-bottom: 10px;">Редакция на поръчка</h3>
+        <input type="hidden" id="editId">
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+            <div><label>Клиент:</label><input type="text" id="editClientName"></div>
+            <div><label>Телефон:</label><input type="text" id="editClientPhone"></div>
+        </div>
+        <div style="margin:10px 0"><label>Устройство:</label><input type="text" id="editDevice"></div>
+        <div style="margin:10px 0"><label>Проблем:</label><textarea id="editProblem" rows="2"></textarea></div>
+        <div style="background: #f4f7f6; padding: 15px; border-radius: 8px;">
+            <label>ИЗВЪРШЕН РЕМОНТ:</label>
+            <textarea id="editSolution" rows="3"></textarea>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <div><label>Труд (лв):</label><input type="number" id="editLabor" value="0"></div>
+                <div><label>Части (лв):</label><input type="number" id="editParts" value="0"></div>
+                <div>
+                    <label>Статус:</label>
+                    <select id="editStatus"><option value="В работа">В работа</option><option value="Приключен">Приключен</option></select>
+                </div>
+            </div>
+        </div>
+        <button onclick="saveEdit()" class="btn-submit" style="background:var(--success); margin-top:15px;">ЗАПАЗИ</button>
+        <button onclick="closeModal()" style="width:100%; border:none; background:none; cursor:pointer; margin-top:10px; color: #666;">Отказ</button>
+    </div>
+</div>
+
+<div id="printArea"><div id="printContent"></div></div>
+
+<script>
+    if (!localStorage.getItem('orderID')) localStorage.setItem('orderID', '4200');
+    document.addEventListener("DOMContentLoaded", loadTable);
+
+    function formatDate(d) { return (d && d !== '-') ? new Date(d).toLocaleDateString('bg-BG') : '-'; }
+
+    document.getElementById('repairForm').onsubmit = function(e) {
+        e.preventDefault();
+        const id = localStorage.getItem('orderID');
+        const record = {
+            id: id, dateIn: new Date().toISOString(), dateOut: '-',
+            name: document.getElementById('clientName').value,
+            phone: document.getElementById('clientPhone').value,
+            device: document.getElementById('device').value,
+            priority: document.getElementById('priority').value,
+            acc: document.getElementById('accessories').value || 'Няма',
+            prob: document.getElementById('problem').value,
+            solution: '-', status: 'В работа', labor: 0, parts: 0
+        };
+        let db = JSON.parse(localStorage.getItem('fragDB')) || [];
+        db.push(record);
+        localStorage.setItem('fragDB', JSON.stringify(db));
+        localStorage.setItem('orderID', parseInt(id) + 1);
+        loadTable(); printIn(record); this.reset();
+    };
+
+    function loadTable() {
+        const db = JSON.parse(localStorage.getItem('fragDB')) || [];
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = db.slice().reverse().map(r => `
+            <tr>
+                <td><b>#${r.id}</b></td>
+                <td>${formatDate(r.dateIn)}</td>
+                <td style="color:var(--success); font-weight:bold;">${formatDate(r.dateOut)}</td>
+                <td><b>${r.name}</b><br>${r.phone}</td>
+                <td>${r.device}</td>
+                <td>${r.prob.substring(0,25)}...</td>
+                <td><b>${(parseFloat(r.labor) + parseFloat(r.parts)).toFixed(2)} лв.</b></td>
+                <td><span class="status-badge ${r.status === 'Приключен' ? 'status-done' : 'status-working'}">${r.status}</span></td>
+                <td>
+                    <button onclick="openEdit(${r.id})" class="btn-action btn-edit">Редакция</button>
+                    <button onclick="reprintIn(${r.id})" class="btn-action btn-print-in">Прием</button>
+                    ${r.status === 'Приключен' ? `<button onclick="reprintOut(${r.id})" class="btn-action btn-print-out">Изход</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openEdit(id) {
+        const db = JSON.parse(localStorage.getItem('fragDB')) || [];
+        const r = db.find(x => x.id == id);
+        if(r) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editClientName').value = r.name;
+            document.getElementById('editClientPhone').value = r.phone;
+            document.getElementById('editDevice').value = r.device;
+            document.getElementById('editProblem').value = r.prob;
+            document.getElementById('editSolution').value = r.solution === '-' ? '' : r.solution;
+            document.getElementById('editLabor').value = r.labor;
+            document.getElementById('editParts').value = r.parts;
+            document.getElementById('editStatus').value = r.status;
+            document.getElementById('editModal').style.display = 'block';
+        }
+    }
+
+    function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+    function saveEdit() {
+        const id = document.getElementById('editId').value;
+        let db = JSON.parse(localStorage.getItem('fragDB'));
+        const idx = db.findIndex(x => x.id == id);
+        if(idx !== -1) {
+            db[idx].name = document.getElementById('editClientName').value;
+            db[idx].phone = document.getElementById('editClientPhone').value;
+            db[idx].device = document.getElementById('editDevice').value;
+            db[idx].prob = document.getElementById('editProblem').value;
+            db[idx].solution = document.getElementById('editSolution').value || '-';
+            db[idx].labor = parseFloat(document.getElementById('editLabor').value) || 0;
+            db[idx].parts = parseFloat(document.getElementById('editParts').value) || 0;
+            if(document.getElementById('editStatus').value === 'Приключен' && db[idx].status !== 'Приключен') db[idx].dateOut = new Date().toISOString();
+            db[idx].status = document.getElementById('editStatus').value;
+            localStorage.setItem('fragDB', JSON.stringify(db));
+            loadTable(); closeModal();
+        }
+    }
+
+    function searchTable() {
+        const v = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('tbody tr').forEach(tr => tr.style.display = tr.innerText.toLowerCase().includes(v) ? '' : 'none');
+    }
+
+    function reprintIn(id) { const db = JSON.parse(localStorage.getItem('fragDB')); printIn(db.find(x => x.id == id)); }
+    function reprintOut(id) { const db = JSON.parse(localStorage.getItem('fragDB')); printOut(db.find(x => x.id == id)); }
+
+    function printIn(r) {
+        const fullTerms = `<b>ОБЩИ УСЛОВИЯ:</b> 1. Техниката се приема за диагностика. Крайната цена се съобщава след преглед. При отказ от ремонт се заплаща такса диагностика. 2. <b>ОТГОВОРНОСТ:</b> Сервизът НЕ носи отговорност за данни в устройството. Клиентът е длъжен да има архив. 3. <b>СКРИТИ ДЕФЕКТИ:</b> Сервизът не носи отговорност за повреди вследствие на скрити дефекти (удари, корозия). 4. <b>ПРЕСТОЙ:</b> Техника, непотърсена 30 дни след уведомление, става собственост на сервиза. 5. <b>GDPR:</b> С подписването се съгласявате данните Ви да бъдат обработвани за нуждите на поръчката. 6. <b>ЗАЩИТА:</b> При опити за измама или обидно отношение, сервизът прекратява обслужването незабавно.`;
+        
+        const content = `
+            <div class="protocol-page-in">
+                <div class="header-print">
+                    <img src="frag_logo.png" class="print-logo">
+                    <div style="border:1.5px solid #000; padding:1mm 3mm; font-weight:bold; font-size:9pt;">${r.priority}</div>
+                    <div class="header-right">
+                        WWW.FRAG.BG<br>
+                        тел. 0876012341 | office@frag.bg
+                    </div>
+                </div>
+                <h3>Приемо-предавателен протокол №${r.id}</h3>
+                <div class="print-row"><b>Дата на приемане:</b>${formatDate(r.dateIn)}</div>
+                <div class="print-row"><b>Клиент:</b>${r.name} | <b>Телефон:</b>${r.phone}</div>
+                <div class="print-row"><b>Устройство:</b>${r.device}</div>
+                <div class="print-row"><b>Аксесоари:</b>${r.acc}</div>
+                <div class="print-row"><b>Описание на проблема:</b>${r.prob}</div>
+                <div class="important-note">ТЕХНИКАТА СЕ ПРЕДАВА ОБРАТНО САМО С ПРЕДОСТАВЯНЕ НА ТОЗИ ПРОТОКОЛ</div>
+                <div class="terms-box">${fullTerms}</div>
+                <div class="sig-section"><div class="sig-box">Приел (Сервиз)</div><div class="sig-box">Клиент (Подпис)</div></div>
+            </div>`;
+        document.getElementById('printContent').innerHTML = content + content;
+        setTimeout(() => window.print(), 500);
+    }
+
+    function printOut(r) {
+        const total = (parseFloat(r.labor) + parseFloat(r.parts)).toFixed(2);
+        document.getElementById('printContent').innerHTML = `
+            <div class="protocol-page-out">
+                <div class="header-print">
+                    <img src="frag_logo.png" class="print-logo">
+                    <div style="font-weight:bold; font-size:14pt; color:green;">ИЗДАДЕНО УСТРОЙСТВО</div>
+                    <div class="header-right">
+                        WWW.FRAG.BG<br>
+                        тел. 0876012341 | office@frag.bg
+                    </div>
+                </div>
+                <h3>Сервизен протокол №${r.id}</h3>
+                <div class="print-row"><b>Дата на приемане:</b>${formatDate(r.dateIn)}</div>
+                <div class="print-row"><b>Дата на издаване:</b>${formatDate(r.dateOut)}</div>
+                <div class="print-row"><b>Клиент:</b>${r.name} | <b>Телефон:</b>${r.phone}</div>
+                <div class="print-row"><b>Устройство:</b>${r.device}</div>
+                <div style="margin-top:5mm; font-weight:bold;">ИЗВЪРШЕНИ ДЕЙНОСТИ:</div>
+                <div class="solution-box">${r.solution}</div>
+                <div style="display:flex; justify-content:space-between; margin-top:4mm; font-size:12pt;">
+                    <div><b>Резервни части:</b> ${parseFloat(r.parts).toFixed(2)} лв.</div>
+                    <div><b>Труд:</b> ${parseFloat(r.labor).toFixed(2)} лв.</div>
+                </div>
+                <div class="price-summary">ОБЩА СУМА: ${total} лв.</div>
+                <div style="background:#f0f0f0; border:1.5px solid #000; padding:3mm; text-align:center; font-weight:bold; margin-top:4mm; font-size:10.5pt; text-transform:uppercase;">
+                    С подписването потвърждавам, че техниката ми е предадена изправна, тествана е пред мен и нямам забележки към ремонта.
+                </div>
+                <div class="terms-box" style="margin-top:4mm;">
+                    <b>ГАРАНЦИЯ:</b> 30 дни гаранция за извършения ремонт. Валидна само с този документ. Не покрива нови удари, намокряне или софтуерни грешки.
+                </div>
+                <div class="sig-section" style="margin-top:10mm;">
+                    <div class="sig-box">Предал (Сервиз)</div>
+                    <div class="sig-box">Получил и Тествал (Клиент)</div>
+                </div>
+            </div>`;
+        setTimeout(() => window.print(), 500);
+    }
+</script>
+</body>
+</html>
